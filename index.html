@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLVO | Career OS 5.0</title>
+    
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. React Engine -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. Babel Translator -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Fonts: Plus Jakarta Sans (Modern, Geometric, Tech-forward) -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        html { scroll-behavior: smooth; }
+        
+        /* Custom Scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animation: Soft Float */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-delayed { animation: float 6s ease-in-out infinite 3s; }
+
+        /* Animation: Gradient Shift */
+        @keyframes gradient-xy {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animate-gradient {
+            background-size: 200% 200%;
+            animation: gradient-xy 6s ease infinite;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .glass-dark {
+            background: rgba(20, 20, 25, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- CUSTOM ICONS (Replaces Lucide imports) ---
+        const Icon = ({ path, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {path}
+            </svg>
+        );
+
+        const icons = {
+            Layout: <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />,
+            Compass: <><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></>,
+            Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+            TrendingUp: <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>,
+            CheckCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+            Play: <polygon points="5 3 19 12 5 21 5 3"/>,
+            Search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+            Bell: <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>,
+            Menu: <><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></>,
+            X: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+            ArrowRight: <><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></>,
+            Lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+            Database: <><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>
+        };
+
+        const Logo = () => (
+            <div className="flex items-center gap-2 font-bold text-xl tracking-tight cursor-pointer">
+                <div className="relative w-8 h-8">
+                    <div className="absolute top-0 left-0 w-4 h-4 bg-red-500 rounded-tl-lg"></div>
+                    <div className="absolute top-0 right-0 w-4 h-4 bg-blue-500 rounded-tr-lg"></div>
+                    <div className="absolute bottom-0 left-0 w-4 h-4 bg-yellow-400 rounded-bl-lg"></div>
+                    <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-br-lg"></div>
+                </div>
+                <span>SOLVO</span>
+            </div>
+        );
+
+        // --- SUB COMPONENTS ---
+
+        const NavItem = ({ href, text }) => (
+            <a href={href} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+                {text}
+            </a>
+        );
+
+        const ColorOrb = ({ color, className }) => (
+            <div className={`absolute rounded-full blur-[80px] opacity-40 mix-blend-multiply animate-float ${className}`} style={{backgroundColor: color}}></div>
+        );
+
+        const DashboardCard = ({ title, color, icon, children }) => (
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all h-full relative overflow-hidden group">
+                <div className={`absolute top-0 left-0 w-1 h-full bg-${color}-500`}></div>
+                <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-bold text-slate-800 text-sm">{title}</h3>
+                    <div className={`p-1.5 rounded-lg bg-${color}-50 text-${color}-600`}>
+                        {icon}
+                    </div>
+                </div>
+                {children}
+            </div>
+        );
+
+        // --- MAIN APP ---
+
+        const App = () => {
+            const [isScrolled, setIsScrolled] = useState(false);
+            const [activeTab, setActiveTab] = useState('board');
+
+            useEffect(() => {
+                const handleScroll = () => setIsScrolled(window.scrollY > 20);
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            return (
+                <div className="min-h-screen relative overflow-hidden">
+                    
+                    {/* --- BACKGROUND BLOBS (The "Soul" of the colors) --- */}
+                    <div className="fixed inset-0 z-[-1] pointer-events-none">
+                        <ColorOrb color="#EF4444" className="w-96 h-96 -top-20 -left-20" /> {/* Red */}
+                        <ColorOrb color="#3B82F6" className="w-[500px] h-[500px] top-40 -right-40 animate-float-delayed" /> {/* Blue */}
+                        <ColorOrb color="#EAB308" className="w-64 h-64 bottom-20 left-20" /> {/* Yellow */}
+                        <ColorOrb color="#22C55E" className="w-80 h-80 -bottom-20 right-1/3" /> {/* Green */}
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-3xl"></div>
+                    </div>
+
+                    {/* --- NAVIGATION --- */}
+                    <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'py-3' : 'py-6'}`}>
+                        <div className="max-w-7xl mx-auto px-6">
+                            <div className={`glass-panel rounded-2xl px-6 py-3 flex justify-between items-center transition-all ${isScrolled ? 'shadow-lg bg-white/80' : 'bg-white/40 border-transparent shadow-none'}`}>
+                                <Logo />
+                                
+                                <div className="hidden md:flex items-center gap-8">
+                                    <NavItem href="#features" text="Features" />
+                                    <NavItem href="#methodology" text="Methodology" />
+                                    <NavItem href="#pricing" text="Pricing" />
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <button className="hidden sm:block text-sm font-bold text-slate-700 hover:text-black px-4 py-2">Log In</button>
+                                    <button className="bg-slate-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-black transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2">
+                                        Get Started <Icon path={icons.ArrowRight} size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* --- HERO SECTION --- */}
+                    <section className="pt-48 pb-24 px-6 relative">
+                        <div className="max-w-5xl mx-auto text-center mb-16">
+                            <div className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-8 shadow-sm text-slate-600 animate-fade-in-up">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                The OS for Ambition
+                            </div>
+                            
+                            <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.1] animate-fade-in-up" style={{animationDelay: '0.1s'}}>
+                                Organize your <br/>
+                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 animate-gradient">Colorful Chaos.</span>
+                            </h1>
+                            
+                            <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-12 font-medium leading-relaxed animate-fade-in-up" style={{animationDelay: '0.2s'}}>
+                                The simplicity of a notepad meets the power of a career coach. 
+                                SOLVO brings your <span className="text-red-500 font-bold">goals</span>, <span className="text-blue-500 font-bold">tasks</span>, <span className="text-green-500 font-bold">progress</span>, and <span className="text-yellow-500 font-bold">ideas</span> into one vibrant workspace.
+                            </p>
+                            
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
+                                <button className="h-14 px-8 rounded-2xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/30 flex items-center gap-2">
+                                    Start Discovery
+                                </button>
+                                <button className="h-14 px-8 rounded-2xl bg-white text-slate-700 font-bold text-lg border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
+                                    <Icon path={icons.Play} className="w-5 h-5 fill-slate-700" /> Watch Demo
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* --- THE OS INTERFACE --- */}
+                        <div className="max-w-6xl mx-auto relative animate-fade-in-up" style={{animationDelay: '0.5s'}}>
+                            {/* Floating Context Badges */}
+                            <div className="absolute -top-6 -left-6 z-20 bg-white p-3 rounded-xl shadow-xl border border-red-100 hidden md:flex items-center gap-3 rotate-[-6deg]">
+                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold">85</div>
+                                <div>
+                                    <div className="text-xs text-slate-400 font-bold uppercase">Aptitude</div>
+                                    <div className="text-sm font-bold text-slate-800">High Logic</div>
+                                </div>
+                            </div>
+                            
+                            <div className="absolute -bottom-10 -right-10 z-20 bg-white p-3 rounded-xl shadow-xl border border-green-100 hidden md:flex items-center gap-3 rotate-[3deg]">
+                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
+                                    <Icon path={icons.TrendingUp} />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-slate-400 font-bold uppercase">Market</div>
+                                    <div className="text-sm font-bold text-slate-800">+22% Growth</div>
+                                </div>
+                            </div>
+
+                            {/* Main Window */}
+                            <div className="bg-[#0F1115] rounded-3xl shadow-2xl border border-white/10 overflow-hidden ring-1 ring-white/10">
+                                {/* Window Header */}
+                                <div className="h-12 bg-[#1A1D24] flex items-center px-4 justify-between border-b border-white/5">
+                                    <div className="flex gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-[#FF5F57]"></div>
+                                        <div className="w-3 h-3 rounded-full bg-[#FEBC2E]"></div>
+                                        <div className="w-3 h-3 rounded-full bg-[#28C840]"></div>
+                                    </div>
+                                    <div className="flex bg-[#0F1115] rounded-lg px-1 p-0.5 border border-white/5">
+                                        {['dashboard', 'roadmap', 'library'].map(tab => (
+                                            <button 
+                                                key={tab}
+                                                onClick={() => setActiveTab(tab)}
+                                                className={`px-4 py-1 rounded-md text-xs font-bold capitalize transition-all ${activeTab === tab ? 'bg-[#2A2E37] text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                            >
+                                                {tab}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-xs text-slate-500">v5.0</div>
+                                        <div className="w-6 h-6 bg-gradient-to-tr from-blue-500 to-green-500 rounded-full"></div>
+                                    </div>
+                                </div>
+
+                                {/* OS Body */}
+                                <div className="flex h-[600px]">
+                                    {/* Sidebar */}
+                                    <div className="w-20 md:w-64 bg-[#14161B] border-r border-white/5 p-4 flex flex-col gap-6">
+                                        <div className="hidden md:block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Four Pillars</div>
+                                        
+                                        <div className="space-y-1">
+                                            <div className="group flex items-center gap-3 p-2 rounded-xl bg-blue-500/10 text-blue-400 cursor-pointer border border-blue-500/20">
+                                                <div className="p-2 bg-blue-500/20 rounded-lg"><Icon path={icons.Layout} size={18} /></div>
+                                                <span className="hidden md:block font-medium text-sm">Dashboard</span>
+                                            </div>
+                                            <div className="group flex items-center gap-3 p-2 rounded-xl text-slate-400 hover:bg-white/5 hover:text-red-400 cursor-pointer transition-colors">
+                                                <div className="p-2 bg-white/5 rounded-lg group-hover:bg-red-500/20"><Icon path={icons.Zap} size={18} /></div>
+                                                <span className="hidden md:block font-medium text-sm">Urgent Tasks</span>
+                                            </div>
+                                            <div className="group flex items-center gap-3 p-2 rounded-xl text-slate-400 hover:bg-white/5 hover:text-green-400 cursor-pointer transition-colors">
+                                                <div className="p-2 bg-white/5 rounded-lg group-hover:bg-green-500/20"><Icon path={icons.TrendingUp} size={18} /></div>
+                                                <span className="hidden md:block font-medium text-sm">Growth</span>
+                                            </div>
+                                            <div className="group flex items-center gap-3 p-2 rounded-xl text-slate-400 hover:bg-white/5 hover:text-yellow-400 cursor-pointer transition-colors">
+                                                <div className="p-2 bg-white/5 rounded-lg group-hover:bg-yellow-500/20"><Icon path={icons.Compass} size={18} /></div>
+                                                <span className="hidden md:block font-medium text-sm">Discovery</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-auto bg-[#1A1D24] p-4 rounded-xl border border-white/5 hidden md:block">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-xs font-bold text-slate-400">Weekly Goal</span>
+                                                <span className="text-xs font-bold text-green-400">85%</span>
+                                            </div>
+                                            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                                <div className="h-full w-[85%] bg-gradient-to-r from-blue-500 to-green-500"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Content Area */}
+                                    <div className="flex-1 bg-[#0F1115] p-8 overflow-y-auto relative">
+                                        {/* Background Grid in Dark Mode */}
+                                        <div className="absolute inset-0 opacity-20" style={{backgroundImage: 'radial-gradient(#334155 1px, transparent 1px)', backgroundSize: '24px 24px'}}></div>
+
+                                        <div className="relative z-10">
+                                            <div className="flex justify-between items-end mb-8">
+                                                <div>
+                                                    <h2 className="text-3xl font-bold text-white mb-2">My Workspace</h2>
+                                                    <p className="text-slate-400 text-sm">Your career operating system is <span className="text-green-400 font-bold">Online</span>.</p>
+                                                </div>
+                                                <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-900/50 transition-all flex items-center gap-2">
+                                                    <Icon path={icons.Play} size={16} /> Resume Sprint
+                                                </button>
+                                            </div>
+
+                                            {/* Bento Grid */}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                
+                                                {/* Card 1: Main Focus (Blue) */}
+                                                <div className="col-span-1 md:col-span-2 bg-[#14161B] border border-blue-500/20 rounded-3xl p-6 relative overflow-hidden group">
+                                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full"></div>
+                                                    <div className="flex items-center gap-3 mb-6">
+                                                        <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg"><Icon path={icons.Layout} /></div>
+                                                        <h3 className="text-lg font-bold text-white">Current Sprint</h3>
+                                                        <span className="ml-auto text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded border border-blue-500/20">In Progress</span>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center justify-between p-3 bg-[#1A1D24] rounded-xl border border-white/5 hover:border-blue-500/50 transition-colors cursor-pointer">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-5 h-5 rounded-full border-2 border-slate-600"></div>
+                                                                <span className="text-slate-300 text-sm font-medium">Build Portfolio Home Page</span>
+                                                            </div>
+                                                            <span className="text-xs text-red-400 font-bold bg-red-500/10 px-2 py-1 rounded">High Priority</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between p-3 bg-[#1A1D24] rounded-xl border border-white/5 hover:border-blue-500/50 transition-colors cursor-pointer">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-5 h-5 rounded-full border-2 border-slate-600"></div>
+                                                                <span className="text-slate-300 text-sm font-medium">Complete React Hooks Module</span>
+                                                            </div>
+                                                            <span className="text-xs text-yellow-400 font-bold bg-yellow-500/10 px-2 py-1 rounded">Learning</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Card 2: Stats (Green) */}
+                                                <div className="bg-[#14161B] border border-green-500/20 rounded-3xl p-6 relative overflow-hidden">
+                                                    <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-green-500/10 to-transparent"></div>
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h3 className="text-lg font-bold text-white">Velocity</h3>
+                                                        <Icon path={icons.TrendingUp} className="text-green-500" />
+                                                    </div>
+                                                    <div className="text-4xl font-extrabold text-white mb-2">12 <span className="text-lg font-medium text-slate-500">tasks</span></div>
+                                                    <p className="text-xs text-green-400 font-medium">+20% vs last week</p>
+                                                    <div className="mt-6 flex items-end gap-1 h-12">
+                                                        {[40, 70, 50, 90, 60, 80, 100].map((h,i) => (
+                                                            <div key={i} className="flex-1 bg-green-900 rounded-t-sm overflow-hidden relative">
+                                                                <div className="absolute bottom-0 left-0 w-full bg-green-500" style={{height: `${h}%`}}></div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Card 3: Ideas (Yellow) */}
+                                                <div className="bg-[#14161B] border border-yellow-500/20 rounded-3xl p-6 relative overflow-hidden">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="p-2 bg-yellow-500/20 text-yellow-400 rounded-lg"><Icon path={icons.Compass} /></div>
+                                                        <h3 className="text-lg font-bold text-white">Trait Match</h3>
+                                                    </div>
+                                                    <div className="relative h-32 w-32 mx-auto">
+                                                        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                                                            <circle cx="50" cy="50" r="45" stroke="#334155" strokeWidth="8" fill="none" />
+                                                            <circle cx="50" cy="50" r="45" stroke="#EAB308" strokeWidth="8" fill="none" strokeDasharray="283" strokeDashoffset="40" strokeLinecap="round" />
+                                                        </svg>
+                                                        <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                                            <span className="text-2xl font-bold text-white">88%</span>
+                                                            <span className="text-[10px] text-slate-400 uppercase font-bold">Architect</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Card 4: Library (Red) */}
+                                                <div className="col-span-1 md:col-span-2 bg-[#14161B] border border-red-500/20 rounded-3xl p-6 flex items-center justify-between group cursor-pointer hover:bg-[#1A1D24] transition-colors">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 bg-red-500/20 text-red-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                            <Icon path={icons.Play} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs text-red-400 font-bold uppercase mb-1">Up Next</div>
+                                                            <h3 className="text-lg font-bold text-white">Advanced System Design Patterns</h3>
+                                                            <p className="text-xs text-slate-500">Youtube • 45 mins</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-8 h-8 rounded-full border border-slate-600 flex items-center justify-center text-slate-400 group-hover:border-white group-hover:text-white transition-all">
+                                                        <Icon path={icons.ArrowRight} size={14} />
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* --- FEATURE CARDS (The Four Pillars) --- */}
+                    <section id="features" className="py-24 bg-white relative overflow-hidden">
+                        <div className="max-w-7xl mx-auto px-6">
+                            <div className="text-center mb-16">
+                                <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4">The SOLVO Quad-Core</h2>
+                                <p className="text-slate-500 text-lg">Four powerful engines working in sync.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <DashboardCard title="Psychometric Engine" color="yellow" icon={<Icon path={icons.Compass} size={20} />}>
+                                    <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                        We map your Big Five traits to real-world industrial demand. No more guessing.
+                                    </p>
+                                    <div className="h-16 w-full bg-yellow-50 rounded-lg relative overflow-hidden">
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="w-32 h-32 border-2 border-yellow-200 rounded-full"></div>
+                                            <div className="w-20 h-20 border-2 border-yellow-300 rounded-full absolute"></div>
+                                        </div>
+                                    </div>
+                                </DashboardCard>
+
+                                <DashboardCard title="Market Data" color="green" icon={<Icon path={icons.TrendingUp} size={20} />}>
+                                    <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                        Live integration with O*NET and LinkedIn. See which skills are surging in value.
+                                    </p>
+                                    <div className="flex items-end justify-between h-16 px-2 pb-2">
+                                        <div className="w-4 bg-green-200 h-[40%] rounded-t-sm"></div>
+                                        <div className="w-4 bg-green-300 h-[60%] rounded-t-sm"></div>
+                                        <div className="w-4 bg-green-400 h-[80%] rounded-t-sm"></div>
+                                        <div className="w-4 bg-green-500 h-[100%] rounded-t-sm"></div>
+                                    </div>
+                                </DashboardCard>
+
+                                <DashboardCard title="Resource Index" color="red" icon={<Icon path={icons.Database} size={20} />}>
+                                    <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                        Curated, free, and high-quality tutorials from YouTube & Coursera, indexed by topic.
+                                    </p>
+                                    <div className="flex gap-2 h-16 items-center">
+                                        <div className="flex-1 h-10 bg-red-50 rounded-md border border-red-100 flex items-center justify-center text-red-300">YT</div>
+                                        <div className="flex-1 h-10 bg-red-50 rounded-md border border-red-100 flex items-center justify-center text-red-300">EDX</div>
+                                    </div>
+                                </DashboardCard>
+
+                                <DashboardCard title="Execution OS" color="blue" icon={<Icon path={icons.Layout} size={20} />}>
+                                    <p className="text-slate-500 text-sm leading-relaxed mb-4">
+                                        Your personalized Kanban board and timeline. Stop planning, start doing.
+                                    </p>
+                                    <div className="space-y-2 mt-2">
+                                        <div className="h-4 bg-blue-50 rounded w-full"></div>
+                                        <div className="h-4 bg-blue-50 rounded w-2/3"></div>
+                                    </div>
+                                </DashboardCard>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* --- FOOTER --- */}
+                    <footer className="py-12 border-t border-slate-100 bg-white">
+                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                            <Logo />
+                            <div className="flex gap-6 text-sm text-slate-500 font-medium">
+                                <a href="#" className="hover:text-blue-600 transition-colors">Manifesto</a>
+                                <a href="#" className="hover:text-blue-600 transition-colors">Twitter</a>
+                                <a href="#" className="hover:text-blue-600 transition-colors">Contact</a>
+                            </div>
+                            <p className="text-slate-400 text-sm">© 2024 SOLVO Systems</p>
+                        </div>
+                    </footer>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
